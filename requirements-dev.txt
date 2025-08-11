@@ -1,0 +1,26 @@
+# Include production requirements
+-r requirements.txt
+
+# Development & Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+httpx==0.25.2
+
+# Code Quality
+black==23.11.0
+flake8==6.1.0
+isort==5.12.0
+mypy==1.7.1
+
+# Database Testing
+pytest-postgresql==5.0.0
+factory-boy==3.3.1
+
+# Documentation
+mkdocs==1.5.3
+mkdocs-material==9.4.8
+
+# Debugging
+ipdb==0.13.13
+rich==13.7.0
