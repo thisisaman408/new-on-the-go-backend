@@ -44,7 +44,7 @@ def start_celery_worker(queues: Optional[List[str]] = None,
         '--queues', ','.join(queues),
         '--concurrency', str(concurrency),
         '--loglevel', log_level,
-        '--pool', 'solo' if os.name == 'nt' else 'prefork',  # Windows compatibility
+        '--pool', 'solo'
     ]
     
     print(f"🚀 Starting Celery worker: {' '.join(cmd)}")

@@ -11,7 +11,7 @@ from typing import Optional, Any, Dict, List, Union, cast , Set
 import logging
 import json
 from datetime import timedelta, datetime # Added datetime import
-
+from collections import defaultdict
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -290,6 +290,112 @@ class RedisClient:
                 stats.append(stat)
         return stats
     
+    def cache_articles_by_recency(self, time_bucket: str, article_ids: List[int], ttl: int = 3600) -> bool:
+        """Cache article IDs by time bucket (1h, 6h, 24h)"""
+        key = f"recency:{time_bucket}:articles"
+        try:
+            article_ids_str = [str(aid) for aid in article_ids]
+            self.delete(key)  # Clear existing
+            if article_ids_str:
+                self.lpush(key, *article_ids_str)
+                self.expire(key, ttl)
+            return True
+        except Exception as e:
+            logger.error(f"Error caching recency articles: {e}")
+            return False
+    
+    def get_articles_by_recency(self, time_bucket: str) -> List[int]:
+        """Get cached articles by time bucket"""
+        key = f"recency:{time_bucket}:articles"
+        try:
+            article_ids_str = self.lrange(key)
+            return [int(aid) for aid in article_ids_str if aid.isdigit()]
+        except Exception as e:
+            logger.error(f"Error getting recency articles: {e}")
+            return []
+    
+    def cache_source_performance(self, source_id: int, metrics: Dict[str, Any], ttl: int = 1800) -> bool:
+        """Cache RSS source performance metrics"""
+        key = f"source_perf:{source_id}"
+        try:
+            return self.set_json(key, metrics, ex=ttl)
+        except Exception as e:
+            logger.error(f"Error caching source performance: {e}")
+            return False
+    
+    def get_source_performance(self, source_id: int) -> Optional[Dict[str, Any]]:
+        """Get cached source performance metrics"""
+        key = f"source_perf:{source_id}"
+        return self.get_json(key)
+    
+    def cache_news_digest(self, digest_type: str, content: Dict[str, Any], ttl: int = 7200) -> bool:
+        """Cache pre-computed news digests"""
+        key = f"digest:{digest_type}:{datetime.now().strftime('%Y%m%d_%H')}"
+        return self.set_json(key, content, ex=ttl)
+    
+    def get_news_digest(self, digest_type: str) -> Optional[Dict[str, Any]]:
+        """Get cached news digest (try current hour, then previous hour)"""
+        for hour_offset in [0, 1]:
+            target_time = datetime.now() - timedelta(hours=hour_offset)
+            key = f"digest:{digest_type}:{target_time.strftime('%Y%m%d_%H')}"
+            digest = self.get_json(key)
+            if digest:
+                return digest
+        return None
+    
+    def invalidate_topic_cache(self, topic: str) -> bool:
+        """Invalidate cache for specific topic"""
+        key = f"topic:{topic}:articles"
+        return bool(self.delete(key))
+    
+    def get_cache_analytics(self) -> Dict[str, Any]:
+        """Get cache analytics and metrics"""
+        try:
+            info = cast(Dict[str, Any], self.client.info())
+            
+            # Get key counts by pattern
+            patterns = {
+                'articles': 'article:*',
+                'topics': 'topic:*',
+                'recency': 'recency:*',
+                'source_perf': 'source_perf:*',
+                'digests': 'digest:*',
+                'rss_stats': 'rss:stats:*'
+            }
+            
+            key_counts = {}
+            total_keys = 0
+            
+            for cache_type, pattern in patterns.items():
+                keys = cast(List[str], self.client.keys(pattern))
+                key_counts[cache_type] = len(keys)
+                total_keys += len(keys)
+            
+            return {
+                'total_keys': total_keys,
+                'key_counts_by_type': key_counts,
+                'memory_usage': info.get('used_memory_human', 'Unknown'),
+                'connected_clients': info.get('connected_clients', 0),
+                'total_commands_processed': info.get('total_commands_processed', 0),
+                'cache_hit_rate': self._calculate_hit_rate(),
+                'timestamp': datetime.now().isoformat()
+            }
+        except Exception as e:
+            logger.error(f"Error getting cache analytics: {e}")
+            return {'error': str(e)}
+    
+    def _calculate_hit_rate(self) -> float:
+        """Calculate cache hit rate from Redis stats"""
+        try:
+            info = cast(Dict[str, Any], self.client.info())
+            hits = info.get('keyspace_hits', 0)
+            misses = info.get('keyspace_misses', 0)
+            total = hits + misses
+            return (hits / total * 100) if total > 0 else 0.0
+        except Exception:
+            return 0.0
+
+
     # Health and monitoring
     
     def health_check(self) -> Dict[str, Any]:
