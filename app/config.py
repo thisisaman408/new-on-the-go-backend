@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     # Celery Configuration
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
-    
+
+    CELERY_TIMEZONE: str = 'UTC'
+    CELERY_ENABLE_UTC: bool = True
     # AI Configuration (Optional - can be enabled/disabled)
     AI_ENABLED: bool = False  # Master AI switch
     AI_PROCESSING_ENABLED: bool = False
