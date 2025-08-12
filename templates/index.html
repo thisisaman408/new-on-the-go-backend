@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Aggregator Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">📰 News Aggregator</h1>
+            <div class="header-stats" id="headerStats">
+                <div class="stat">
+                    <span class="stat-value" id="totalArticles">-</span>
+                    <span class="stat-label">Total Articles</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="recentArticles">-</span>
+                    <span class="stat-label">Last 24h</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value" id="totalSources">-</span>
+                    <span class="stat-label">Active Sources</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Controls -->
+    <section class="controls">
+        <div class="container">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search articles..." class="search-input">
+                <button id="searchBtn" class="search-btn">🔍</button>
+            </div>
+            
+            <div class="filter-container">
+                <select id="categoryFilter" class="filter-select">
+                    <option value="all">All Topics</option>
+                    <option value="technology">Technology</option>
+                    <option value="business">Business</option>
+                    <option value="ai">AI</option>
+                    <option value="stocks">Stocks</option>
+                    <option value="startups">Startups</option>
+                    <option value="politics">Politics</option>
+                    <option value="general">General</option>
+                </select>
+                
+                <select id="sourceFilter" class="filter-select">
+                    <option value="">All Sources</option>
+                </select>
+                
+                <button id="refreshBtn" class="refresh-btn">🔄 Refresh</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Statistics Dashboard -->
+            <section class="dashboard" id="dashboard">
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <h3>Top Topics</h3>
+                        <div id="topTopics" class="topic-list">Loading...</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Top Sources</h3>
+                        <div id="topSources" class="source-list">Loading...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Articles Grid -->
+            <section class="articles-section">
+                <div class="section-header">
+                    <h2>Latest Articles</h2>
+                    <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+                        Loading articles...
+                    </div>
+                </div>
+                
+                <div class="articles-grid" id="articlesGrid">
+                    <!-- Articles will be loaded here -->
+                </div>
+                
+                <div class="load-more-container">
+                    <button id="loadMoreBtn" class="load-more-btn" style="display: none;">
+                        Load More Articles
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Article Modal -->
+    <div id="articleModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <div id="modalContent">
+                <!-- Article details will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

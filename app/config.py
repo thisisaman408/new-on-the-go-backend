@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List, Optional
+from typing import List, Optional, Literal
 import os
 
 class Settings(BaseSettings):
@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     
     # AI Configuration (Optional - can be enabled/disabled)
     AI_ENABLED: bool = False  # Master AI switch
+    AI_PROCESSING_ENABLED: bool = False
+    AI_PROVIDER: Literal["openai", "perplexity", "hybrid"] = "openai"
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-3.5-turbo"  # Cost-effective model
     AI_MAX_REQUESTS_PER_MINUTE: int = 30  # Rate limiting
