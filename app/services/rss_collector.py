@@ -105,9 +105,49 @@ class RSSCollector:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit"""
+        """
+        Enhanced async context manager exit with proper session cleanup
+        Prevents file descriptor leaks
+        """
         if self.session:
-            await self.session.close()
+            try:
+                # First, close the session gracefully
+                logger.debug("Closing aiohttp session...")
+                
+                # Close the session (this closes the connector too)
+                await self.session.close()
+                
+                # Give time for connections to close properly
+                await asyncio.sleep(0.1)
+                
+                # Force close any remaining connections in the connector
+                if hasattr(self.session, '_connector') and self.session._connector:
+                    if hasattr(self.session._connector, 'close'):
+                        await self.session._connector.close()
+                        
+                # Additional wait for connection cleanup
+                await asyncio.sleep(0.05)
+                
+                logger.debug("aiohttp session closed successfully")
+                
+            except Exception as e:
+                # Log warning but don't raise - cleanup should be non-blocking
+                logger.warning(f"Session cleanup warning: {e}")
+                
+                # Force close if normal close failed
+                try:
+                    if hasattr(self.session, '_connector') and self.session._connector:
+                        # Force close the connector
+                        if hasattr(self.session._connector, '_close'):
+                            self.session._connector._close()
+                except Exception as force_close_error:
+                    logger.debug(f"Force close attempted: {force_close_error}")
+                    
+            finally:
+                # Always set session to None to prevent reuse
+                self.session = None
+                logger.debug("Session reference cleared")
+
     
     async def collect_from_all_sources(self, max_concurrent: Optional[int] = None) -> Dict[str, Any]:
         """

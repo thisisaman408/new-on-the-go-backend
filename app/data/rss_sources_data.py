@@ -319,7 +319,7 @@ RSS_SOURCES_DATA: List[Dict[str, Any]] = [
         "category": RSSCategories.STOCKS
     },
     {
-        "name": "Yahoo Finance",
+        "name": "Yahoo Finance News",
         "url": "https://finance.yahoo.com/news/rssindex",
         "region": "Global",
         "country_code": "US",
@@ -330,7 +330,7 @@ RSS_SOURCES_DATA: List[Dict[str, Any]] = [
         "category": RSSCategories.STOCKS
     },
         {
-        "name": "Yahoo Finance",
+        "name": "Yahoo Finance Stocks",
         "url": "https://feeds.finance.yahoo.com/rss/2.0/headline?s=MSFT,AAPL&region=US&lang=en-US",
         "region": "Global",
         "country_code": "US",
@@ -338,7 +338,7 @@ RSS_SOURCES_DATA: List[Dict[str, Any]] = [
         "reliability_score": 87,
         "poll_frequency_minutes": 10,
         "topics": ["stocks", "finance", "markets"],
-        "category": RSSCategories.FINANCE,
+        "category": RSSCategories.FINANCE
     },
     {
         "name": "Seeking Alpha",
@@ -433,8 +433,8 @@ RSS_SOURCES_DATA: List[Dict[str, Any]] = [
         "category": RSSCategories.AI
     }, 
     {
-        "name": "Google AI Blog",
-        "url": "https://blog.google/technology/rss/",
+        "name": "Google Tech Blog",
+        "url": "https://blog.google/technology/rss",
         "region": "Global",
         "country_code": "US",
         "language": "en",
@@ -481,7 +481,7 @@ RSS_SOURCES_DATA: List[Dict[str, Any]] = [
     },
 
     {
-        "name": "Mashable",
+        "name": "Mashable All",
         "url": "https://mashable.com/feeds/rss/all",
         "region": "US",
         "country_code": "US",
@@ -492,7 +492,7 @@ RSS_SOURCES_DATA: List[Dict[str, Any]] = [
         "category": RSSCategories.GENERAL_NEWS
     },
      {
-        "name": "Mashable",
+        "name": "Mashable Tech",
         "url": "https://mashable.com/feeds/rss/tech",
         "region": "US",
         "country_code": "US",
