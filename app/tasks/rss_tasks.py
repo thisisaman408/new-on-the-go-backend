@@ -25,6 +25,7 @@ nest_asyncio.apply()
 
 logger = logging.getLogger(__name__)
 
+
 class CallbackTask(Task):
     """Base task with enhanced error handling and monitoring"""
     
@@ -40,75 +41,31 @@ class CallbackTask(Task):
         """Task retry callback"""
         logger.warning(f"Task {self.name} [{task_id}] retrying: {exc}")
 
+
 def run_async_safely(coro):
     """
-    Safely run async coroutine in Celery worker context
+    Safely run async coroutine in Celery worker context - FIXED VERSION
     Handles event loop conflicts between Celery and asyncio
     """
     try:
-        # First, try to get the current event loop
-        try: 
+        # Apply nest_asyncio to allow nested loops
+        import nest_asyncio
+        nest_asyncio.apply()
+        
+        # Get or create event loop
+        try:
             loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is running, we need nest_asyncio to handle nested calls
-                # DO NOT use asyncio.run() here - it creates a new loop!
-                import nest_asyncio
-                nest_asyncio.apply()
-                
-                # Create a task and run it
-                task = loop.create_task(coro)
-                
-                # For running loops, we need to use a different approach
-                # Use asyncio.ensure_future and wait for completion
-                future = asyncio.ensure_future(coro)
-                
-                # Wait for the future to complete using run_until_complete
-                return loop.run_until_complete(future)
-                
-                return future.result()
-            else:
-                # Loop exists but not running - safe to use run_until_complete
-                return loop.run_until_complete(coro)
-                
-        except RuntimeError as e:
-            if "no running event loop" in str(e).lower() or "no current event loop" in str(e).lower():
-                # No event loop exists, create a new one
-                logger.debug("No event loop found, creating new one")
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    return loop.run_until_complete(coro)
-                finally:
-                    # Clean up the loop
-                    try:
-                        # Cancel any remaining tasks
-                        pending = asyncio.all_tasks(loop)
-                        for task in pending:
-                            task.cancel()
-                        
-                        # Wait for cancellation to complete
-                        if pending:
-                            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-                    except Exception as cleanup_error:
-                        logger.warning(f"Loop cleanup warning: {cleanup_error}")
-                    finally:
-                        loop.close()
-                        # Remove the loop from thread local storage
-                        asyncio.set_event_loop(None)
-            else:
-                raise
-                
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        # Use nest_asyncio's patched run_until_complete
+        return loop.run_until_complete(coro)
+        
     except Exception as e:
         logger.error(f"run_async_safely failed: {e}")
-        # Last resort: try with asyncio.run (only if no loop exists)
-        try:
-            asyncio.get_event_loop()
-            # Loop exists, can't use asyncio.run
-            raise
-        except RuntimeError:
-            # No loop, safe to use asyncio.run
-            logger.debug("Using asyncio.run as last resort")
-            return asyncio.run(coro)
+        raise
+
 
 @celery_app.task(bind=True, base=CallbackTask, name='app.tasks.rss_tasks.collect_all_rss_sources')
 def collect_all_rss_sources(self, max_concurrent: int = 5) -> Dict[str, Any]:
@@ -151,6 +108,7 @@ def collect_all_rss_sources(self, max_concurrent: int = 5) -> Dict[str, Any]:
         # Retry with exponential backoff
         raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
 
+
 @celery_app.task(bind=True, base=CallbackTask, name='app.tasks.rss_tasks.collect_single_source')
 def collect_single_source(self, source_id: int) -> Dict[str, Any]:
     """
@@ -182,6 +140,7 @@ def collect_single_source(self, source_id: int) -> Dict[str, Any]:
         logger.error(f"Single source collection failed: {exc}")
         raise self.retry(exc=exc, countdown=60)
 
+
 @celery_app.task(bind=True, base=CallbackTask, name='app.tasks.rss_tasks.process_articles_background')
 def process_articles_background(self, batch_size: int = 50) -> Dict[str, Any]:
     """
@@ -207,6 +166,7 @@ def process_articles_background(self, batch_size: int = 50) -> Dict[str, Any]:
     except Exception as exc:
         logger.error(f"Content processing task failed: {exc}")
         raise self.retry(exc=exc, countdown=120)
+
 
 @celery_app.task(bind=True, base=CallbackTask, name='app.tasks.rss_tasks.deduplicate_articles_background')
 def deduplicate_articles_background(self, days_back: int = 3) -> Dict[str, Any]:
@@ -243,6 +203,7 @@ def deduplicate_articles_background(self, days_back: int = 3) -> Dict[str, Any]:
     except Exception as exc:
         logger.error(f"Deduplication task failed: {exc}")
         raise self.retry(exc=exc, countdown=300)
+
 
 @celery_app.task(bind=True, base=CallbackTask, name='app.tasks.rss_tasks.health_check_sources')
 def health_check_sources(self) -> Dict[str, Any]:
@@ -294,6 +255,7 @@ def health_check_sources(self) -> Dict[str, Any]:
         logger.error(f"Health check task failed: {exc}")
         raise self.retry(exc=exc, countdown=300)
 
+
 @celery_app.task(bind=True, base=CallbackTask)
 def manual_source_trigger(self, source_names: List[str]) -> Dict[str, Any]:
     """
@@ -340,6 +302,7 @@ def manual_source_trigger(self, source_names: List[str]) -> Dict[str, Any]:
         logger.error(f"Manual source trigger failed: {exc}")
         raise self.retry(exc=exc, countdown=60)
 
+
 # Utility functions for task monitoring
 def get_task_status(task_id: str) -> Dict[str, Any]:
     """Get status of a Celery task"""
@@ -350,6 +313,7 @@ def get_task_status(task_id: str) -> Dict[str, Any]:
         'result': result.result if result.ready() else None,
         'traceback': result.traceback if result.failed() else None
     }
+
 
 def get_active_tasks() -> List[Dict[str, Any]]:
     """Get list of active tasks"""
@@ -370,6 +334,7 @@ def get_active_tasks() -> List[Dict[str, Any]]:
         return all_tasks
     
     return []
+
 
 # For testing
 if __name__ == '__main__':

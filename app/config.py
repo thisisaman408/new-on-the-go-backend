@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # Redis Configuration
     REDIS_URL: str = "redis://localhost:6379/0"
     REDIS_CACHE_DB: int = 1
-    
+    CELERY_CUSTOM_WORKER_POOL: Optional[str] = None
     # Celery Configuration
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"

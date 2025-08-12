@@ -13,6 +13,8 @@ import logging
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+from celery_aio_pool.pool import AsyncIOPool
+
 
 def create_celery_app() -> Celery:
     """Create and configure Celery application with cloud-ready settings"""
@@ -116,6 +118,10 @@ def create_celery_app() -> Celery:
     
     # Auto-discover tasks
     celery_app.autodiscover_tasks(['app.tasks'])
+    celery_app.conf.update(
+        worker_pool=AsyncIOPool,  # Use AsyncIOPool for better async support
+        worker_concurrency=int(os.getenv('CELERY_WORKER_CONCURRENCY', 4)),  # Default concurrency
+    )
     
     logger.info(f"Celery app configured with broker: {_mask_credentials(broker_url)}")
     return celery_app
